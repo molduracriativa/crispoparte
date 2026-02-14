@@ -38,7 +38,6 @@
         
         .controls-bottom { display: flex; flex-direction: column; align-items: center; gap: 15px; pointer-events: auto; width: 100%; }
         
-        /* NOVO: Container para Arte Personalizada e Botões Invisíveis */
         .custom-controls-wrapper {
             position: relative;
             width: 100%;
@@ -50,12 +49,12 @@
         .arte-botoes-bg {
             position: absolute;
             width: 100vw;
-            height: 177.77vw; /* Proporção 9:16 */
+            height: 177.77vw;
             max-height: 100vh;
             object-fit: contain;
-            pointer-events: none; /* Deixa os cliques passarem para os botões */
+            pointer-events: none;
             z-index: 1;
-            bottom: -40px; /* Ajuste para alinhar com o padding da ui-layer */
+            bottom: -40px;
         }
 
         .capture-controls { 
@@ -66,7 +65,7 @@
             align-items: center; 
         }
 
-        /* Tornando botões invisíveis mas funcionais */
+        /* Botões invisíveis sobre a arte */
         .btn-photo, .btn-boom, .btn-gallery, .btn-video {
             opacity: 0 !important; 
             border: none !important;
@@ -117,7 +116,7 @@
                     <input type="file" id="fileInput" accept="image/*" style="display:none;">
                     <button id="capturePhotoBtn" class="btn-photo"></button>
                     <button id="captureVideoBtn" class="btn-video">
-                        <div id="stopIcon" class="stop-square" style="display:none;"></div>
+                        <div id="stopIcon" style="display:none; width:30px; height:30px; background:red; border-radius:4px; opacity:0;"></div>
                     </button>
                     <button id="boomerangBtn" class="btn-boom"></button>
                 </div>
@@ -250,6 +249,8 @@ async function initCamera() {
 }
 
 function drawFrame(ctx, w, h) {
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, w, h);
     ctx.save();
     const centerX = w / 2, centerY = h / 2;
     if (usingFrontCamera) { ctx.translate(w, 0); ctx.scale(-1, 1); }
@@ -311,8 +312,11 @@ function captureBoomerang(startTime) {
             fCanvas.width = 720; fCanvas.height = 1280;
             const fCtx = fCanvas.getContext('2d');
             const cX = 720/2, cY = 1280/2;
-            fCtx.translate(cX, cY); fCtx.scale(currentScale, currentScale); fCtx.translate(-cX, -centerY);
+            fCtx.fillStyle = "#000"; fCtx.fillRect(0,0,720,1280);
+            fCtx.save();
+            fCtx.translate(cX, cY); fCtx.scale(currentScale, currentScale); fCtx.translate(-cX, -cY);
             fCtx.drawImage(video, 0, 0, 720, 1280);
+            fCtx.restore();
             boomFrames.push(fCanvas);
         }
     }, 40); 
@@ -335,7 +339,8 @@ function processBoomerang() {
     const playInterval = setInterval(() => {
         if (idx >= finalSequence.length) { clearInterval(playInterval); rec.stop(); } 
         else {
-            ctxFinal.clearRect(0,0,720,1280);
+            ctxFinal.fillStyle = "#000";
+            ctxFinal.fillRect(0,0,720,1280);
             ctxFinal.save();
             if (usingFrontCamera) { ctxFinal.translate(720,0); ctxFinal.scale(-1,1); }
             ctxFinal.drawImage(finalSequence[idx], 0, 0, 720, 1280);
