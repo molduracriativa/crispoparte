@@ -10,15 +10,13 @@
         body { margin: 0; background: #000; color: #fff; overflow: hidden; width: 100vw; height: 100dvh; font-family: sans-serif; }
         
         .stage { position: relative; width: 100%; height: 100%; overflow: hidden; background: #000; touch-action: none; }
-        #camera { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.1s linear; }
+        #camera { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: transform 0.1s linear; z-index: 1; }
         #camera.mirrored { transform: scaleX(-1); }
         
         #editorCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 7; background: #000; display: none; }
         #canvasPreview, #videoPreview { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; background: black; display: none; z-index: 10; }
         
-        /* Suporte para iOS - Imagem de resultado */
         #iosImageResult { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; z-index: 20; display: none; }
-
         #molduraImagePreview { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: bottom; pointer-events: none; z-index: 15; display: none; }
         #canvasFinal { display: none; }
         
@@ -30,52 +28,21 @@
 
         .boom-loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); padding: 25px; border-radius: 20px; display: none; z-index: 100; border: 2px solid var(--boom); text-align: center; }
         
-        /* --- ESTRUTURA DA ARTE BOTOES.PNG --- */
         .controls-bottom { display: flex; flex-direction: column; align-items: center; pointer-events: auto; width: 100%; }
-        
-        .custom-controls-wrapper {
-            position: relative;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 150px; /* Garante espaço para a arte */
-        }
+        .custom-controls-wrapper { position: relative; width: 100%; display: flex; justify-content: center; align-items: center; min-height: 150px; }
 
-        .arte-botoes-bg {
-            position: absolute;
-            bottom: -20px; /* Ajuste conforme necessário para alinhar */
-            width: 100vw;
-            height: auto;
-            max-width: 500px;
-            pointer-events: none;
-            z-index: 1;
-        }
+        .arte-botoes-bg { position: absolute; bottom: -20px; width: 100vw; height: auto; max-width: 500px; pointer-events: none; z-index: 1; }
 
-        .capture-controls { 
-            position: relative; 
-            z-index: 2; 
-            display: flex; 
-            gap: 10px; 
-            align-items: center; 
-        }
+        .capture-controls { position: relative; z-index: 2; display: flex; gap: 10px; align-items: center; }
 
-        /* Botões Originais Invisíveis mas Ativos */
-        .btn-photo, .btn-boom, .btn-gallery, .btn-video {
-            opacity: 0 !important; 
-            border: none !important;
-            background: transparent !important;
-            cursor: pointer;
-            outline: none;
-        }
-
+        /* Botões Invisíveis */
+        .btn-photo, .btn-boom, .btn-gallery, .btn-video { opacity: 0 !important; border: none !important; background: transparent !important; cursor: pointer; outline: none; }
         .btn-ui { padding: 10px 20px; background: rgba(0,0,0,0.6); border: 1px solid #fff; border-radius: 20px; color: #fff; cursor: pointer; backdrop-filter: blur(5px); }
         
-        /* Tamanhos das áreas de clique (Ajuste para casar com sua arte) */
-        .btn-gallery { width: 50px; height: 50px; }
-        .btn-photo { width: 70px; height: 70px; }
-        .btn-video { width: 85px; height: 85px; }
-        .btn-boom { width: 60px; height: 60px; }
+        .btn-gallery { width: 55px; height: 55px; }
+        .btn-photo { width: 75px; height: 75px; }
+        .btn-video { width: 90px; height: 90px; }
+        .btn-boom { width: 65px; height: 65px; }
         
         #editUI { display: none; pointer-events: auto; text-align: center; }
         #resultUI { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 50px; z-index: 40; background: rgba(0,0,0,0.85); }
@@ -83,7 +50,6 @@
         .btn-res { padding: 18px; border-radius: 15px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; text-align: center; text-decoration: none; color: #fff; }
         
         #iosTip { font-size: 14px; color: #ffeb3b; text-align: center; margin-bottom: 10px; display: none; }
-
         #startScreen { position: absolute; inset: 0; background: #000 url('capajpg.jpg') center/cover no-repeat; display: flex; align-items: center; justify-content: center; z-index: 100; }
         #startBtn { padding: 25px 55px; font-size: 24px; font-weight: bold; border: none; background: #FF5722; color: #fff; border-radius: 50px; cursor: pointer; }
     </style>
@@ -97,19 +63,16 @@
     <canvas id="canvasFinal"></canvas>
     <video id="videoPreview" playsinline controls loop></video>
     <img id="iosImageResult" alt="Resultado Final" />
-    
     <img id="molduraImagePreview" src="" />
+    
     <div class="boom-loading" id="boomLoading">🚀 Criando seu Boomerang...</div>
 
     <div class="ui-layer" id="cameraUI" style="display:none;">
         <div class="top-bar"><button class="btn-ui" id="switchBtn">🔄 INVERTER</button></div>
-        
         <div class="controls-bottom">
             <div id="videoTimer">00:00</div>
-            
             <div class="custom-controls-wrapper">
                 <img src="botoes.png" class="arte-botoes-bg" id="arteBotoes">
-                
                 <div class="capture-controls">
                     <button id="galleryBtn" class="btn-gallery">G</button>
                     <input type="file" id="fileInput" accept="image/*" style="display:none;">
@@ -144,7 +107,6 @@
 
 <script>
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-
 let usingFrontCamera = true, stream = null, isRecording = false, mediaRecorder = null, recordedChunks = [];
 let currentFileUrl = null, boomFrames = [], currentType = 'image';
 let recordStartTime, timerInterval;
@@ -167,17 +129,17 @@ const video = document.getElementById('camera'),
       fileInput = document.getElementById('fileInput'),
       videoTimer = document.getElementById('videoTimer');
 
-document.getElementById('startBtn').onclick = () => initCamera();
+document.getElementById('startBtn').onclick = initCamera;
 document.getElementById('switchBtn').onclick = switchCamera;
 document.getElementById('capturePhotoBtn').onclick = takePhoto;
 document.getElementById('captureVideoBtn').onclick = () => isRecording ? stopRecording() : startRecording(false);
 document.getElementById('boomerangBtn').onclick = () => startRecording(true);
-document.getElementById('newBtn').onclick = () => resetAll();
+document.getElementById('newBtn').onclick = resetAll;
 document.getElementById('galleryBtn').onclick = () => fileInput.click();
 document.getElementById('cancelEditBtn').onclick = resetAll;
 document.getElementById('confirmEditBtn').onclick = confirmGalleryEdit;
 
-// --- GESTOS E ZOOM ---
+// --- GESTOS ---
 mainStage.addEventListener('touchstart', (e) => {
     if (isEditingGallery) {
         if (e.touches.length === 1) {
@@ -248,10 +210,131 @@ function takePhoto() {
     currentType = 'image';
     canvasFinal.width = 1080; canvasFinal.height = 1920;
     drawFrame(ctxFinal, 1080, 1920);
-    const dataUrl = canvasFinal.toDataURL('image/jpeg', 0.9);
-    showResult(dataUrl, 'image');
+    showResult(canvasFinal.toDataURL('image/jpeg', 0.95), 'image');
 }
 
+function showResult(url, type) {
+    document.getElementById('resultUI').style.display = 'flex';
+    document.getElementById('cameraUI').style.display = 'none';
+    document.getElementById('editUI').style.display = 'none';
+    editorCanvas.style.display = 'none';
+
+    if (type === 'image') {
+        if (isIOS) {
+            iosImageResult.src = url; 
+            iosImageResult.style.display = 'block';
+            document.getElementById('iosTip').style.display = 'block';
+        } else {
+            canvasPreview.style.display = 'block';
+            canvasPreview.width = window.innerWidth; 
+            canvasPreview.height = window.innerHeight;
+            const img = new Image();
+            img.onload = () => canvasPreview.getContext('2d').drawImage(img, 0, 0, canvasPreview.width, canvasPreview.height);
+            img.src = url;
+        }
+    } else {
+        videoPreview.style.display = 'block'; 
+        videoPreview.src = url; 
+        videoPreview.play();
+    }
+
+    document.getElementById('downloadBtn').onclick = () => {
+        const a = document.createElement('a'); 
+        a.href = url;
+        a.download = `registro_${Date.now()}.${type === 'image' ? 'jpg' : 'mp4'}`;
+        a.click();
+    };
+}
+
+function resetAll() {
+    isEditingGallery = false;
+    if (animId) cancelAnimationFrame(animId);
+    
+    // Reset de Vídeo
+    videoPreview.pause();
+    videoPreview.src = "";
+    videoPreview.style.display = "none";
+    
+    // Reset de Imagem
+    iosImageResult.src = "";
+    iosImageResult.style.display = "none";
+    canvasPreview.style.display = "none";
+    document.getElementById('iosTip').style.display = 'none';
+    
+    // UI
+    document.getElementById('resultUI').style.display = 'none';
+    document.getElementById('editUI').style.display = 'none';
+    editorCanvas.style.display = 'none';
+    document.getElementById('cameraUI').style.display = 'flex';
+    
+    // Limpar input de arquivo
+    fileInput.value = "";
+}
+
+// --- LOGICA DA GALERIA ---
+fileInput.onchange = e => {
+    if (e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = ev => {
+            galleryImg = new Image();
+            galleryImg.onload = () => {
+                isEditingGallery = true;
+                document.getElementById('cameraUI').style.display = 'none';
+                document.getElementById('editUI').style.display = 'flex';
+                editorCanvas.style.display = 'block';
+                editorCanvas.width = window.innerWidth; 
+                editorCanvas.height = window.innerHeight;
+                
+                // Ajuste inicial para caber na tela
+                const ratio = Math.min(editorCanvas.width / galleryImg.width, editorCanvas.height / galleryImg.height);
+                galleryTransform.sc = ratio;
+                galleryTransform.x = (editorCanvas.width - (galleryImg.width * ratio)) / 2;
+                galleryTransform.y = (editorCanvas.height - (galleryImg.height * ratio)) / 2;
+                
+                renderEditor();
+            };
+            galleryImg.src = ev.target.result;
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    }
+};
+
+function renderEditor() {
+    if (!isEditingGallery) return;
+    eCtx.fillStyle = "#000";
+    eCtx.fillRect(0, 0, editorCanvas.width, editorCanvas.height);
+    eCtx.save();
+    eCtx.translate(galleryTransform.x, galleryTransform.y);
+    eCtx.scale(galleryTransform.sc, galleryTransform.sc);
+    eCtx.drawImage(galleryImg, 0, 0);
+    eCtx.restore();
+    animId = requestAnimationFrame(renderEditor);
+}
+
+function confirmGalleryEdit() {
+    isEditingGallery = false;
+    if (animId) cancelAnimationFrame(animId);
+    
+    canvasFinal.width = 1080; 
+    canvasFinal.height = 1920;
+    const s = 1080 / editorCanvas.width;
+    
+    ctxFinal.fillStyle = "#000";
+    ctxFinal.fillRect(0, 0, 1080, 1920);
+    ctxFinal.save();
+    ctxFinal.translate(galleryTransform.x * s, galleryTransform.y * s);
+    ctxFinal.scale(galleryTransform.sc * s, galleryTransform.sc * s);
+    ctxFinal.drawImage(galleryImg, 0, 0);
+    ctxFinal.restore();
+    
+    if (molduraImg.complete) {
+        ctxFinal.drawImage(molduraImg, 0, 0, 1080, 1920);
+    }
+    
+    showResult(canvasFinal.toDataURL('image/jpeg', 0.95), 'image');
+}
+
+// --- CÂMERA E VÍDEO (RESTANTE) ---
 function startRecording(isBoom) {
     isRecording = true; recordedChunks = []; boomFrames = [];
     currentType = 'video';
@@ -259,7 +342,6 @@ function startRecording(isBoom) {
         captureBoomerang(Date.now());
     } else {
         startTimer();
-        document.getElementById('captureVideoBtn').classList.add('recording');
         canvasFinal.width = 720; canvasFinal.height = 1280;
         const canvasStream = canvasFinal.captureStream(30);
         if (stream.getAudioTracks().length > 0) canvasStream.addTrack(stream.getAudioTracks()[0]);
@@ -275,11 +357,10 @@ function startRecording(isBoom) {
     }
 }
 
-function stopRecording() {
-    isRecording = false; stopTimer();
-    document.getElementById('captureVideoBtn').classList.remove('recording');
-    if(mediaRecorder) mediaRecorder.stop();
-}
+function stopRecording() { isRecording = false; stopTimer(); if(mediaRecorder) mediaRecorder.stop(); }
+function startTimer() { videoTimer.style.display = 'block'; recordStartTime = Date.now(); timerInterval = setInterval(() => { const seconds = Math.floor((Date.now() - recordStartTime) / 1000); videoTimer.innerText = `${Math.floor(seconds/60).toString().padStart(2,'0')}:${(seconds%60).toString().padStart(2,'0')}`; }, 1000); }
+function stopTimer() { clearInterval(timerInterval); videoTimer.style.display = 'none'; }
+function switchCamera() { usingFrontCamera = !usingFrontCamera; initCamera(); }
 
 function captureBoomerang(startTime) {
     canvasFinal.width = 720; canvasFinal.height = 1280;
@@ -319,84 +400,6 @@ function processBoomerang() {
             idx++;
         }
     }, 33);
-}
-
-function showResult(url, type) {
-    document.getElementById('resultUI').style.display = 'flex';
-    document.getElementById('cameraUI').style.display = 'none';
-    if (type === 'image') {
-        if (isIOS) {
-            iosImageResult.src = url; iosImageResult.style.display = 'block';
-            document.getElementById('iosTip').style.display = 'block';
-        } else {
-            canvasPreview.style.display = 'block';
-            canvasPreview.width = window.innerWidth; canvasPreview.height = window.innerHeight;
-            const img = new Image();
-            img.onload = () => canvasPreview.getContext('2d').drawImage(img, 0, 0, canvasPreview.width, canvasPreview.height);
-            img.src = url;
-        }
-    } else {
-        videoPreview.style.display = 'block'; videoPreview.src = url; videoPreview.play();
-    }
-    document.getElementById('downloadBtn').onclick = () => {
-        const a = document.createElement('a'); a.href = url;
-        a.download = `registro_${Date.now()}.${type === 'image' ? 'jpg' : 'mp4'}`;
-        a.click();
-    };
-}
-
-function resetAll() {
-    isEditingGallery = false; cancelAnimationFrame(animId);
-    videoPreview.pause(); videoPreview.src = "";
-    iosImageResult.src = ""; iosImageResult.style.display = "none";
-    document.getElementById('resultUI').style.display = 'none';
-    document.getElementById('editUI').style.display = 'none';
-    document.getElementById('cameraUI').style.display = 'flex';
-    canvasPreview.style.display = 'none'; videoPreview.style.display = 'none';
-}
-
-function startTimer() { videoTimer.style.display = 'block'; recordStartTime = Date.now(); timerInterval = setInterval(() => { const seconds = Math.floor((Date.now() - recordStartTime) / 1000); videoTimer.innerText = `${Math.floor(seconds/60).toString().padStart(2,'0')}:${(seconds%60).toString().padStart(2,'0')}`; }, 1000); }
-function stopTimer() { clearInterval(timerInterval); videoTimer.style.display = 'none'; }
-function switchCamera() { usingFrontCamera = !usingFrontCamera; initCamera(); }
-
-fileInput.onchange = e => {
-    if (e.target.files[0]) {
-        const reader = new FileReader();
-        reader.onload = ev => {
-            galleryImg = new Image();
-            galleryImg.onload = () => {
-                isEditingGallery = true;
-                document.getElementById('cameraUI').style.display = 'none';
-                document.getElementById('editUI').style.display = 'flex';
-                editorCanvas.style.display = 'block';
-                editorCanvas.width = window.innerWidth; editorCanvas.height = window.innerHeight;
-                galleryTransform.sc = editorCanvas.height / galleryImg.height;
-                galleryTransform.x = (editorCanvas.width - (galleryImg.width * galleryTransform.sc)) / 2;
-                renderEditor();
-            };
-            galleryImg.src = ev.target.result;
-        };
-        reader.readAsDataURL(e.target.files[0]);
-    }
-};
-
-function renderEditor() {
-    if (!isEditingGallery) return;
-    eCtx.fillStyle = "#000"; eCtx.fillRect(0, 0, editorCanvas.width, editorCanvas.height);
-    eCtx.save(); eCtx.translate(galleryTransform.x, galleryTransform.y);
-    eCtx.scale(galleryTransform.sc, galleryTransform.sc); eCtx.drawImage(galleryImg, 0, 0);
-    eCtx.restore(); animId = requestAnimationFrame(renderEditor);
-}
-
-function confirmGalleryEdit() {
-    isEditingGallery = false; cancelAnimationFrame(animId);
-    canvasFinal.width = 1080; canvasFinal.height = 1920;
-    const s = 1080 / editorCanvas.width;
-    ctxFinal.save(); ctxFinal.translate(galleryTransform.x * s, galleryTransform.y * s);
-    ctxFinal.scale(galleryTransform.sc * s, galleryTransform.sc * s);
-    ctxFinal.drawImage(galleryImg, 0, 0); ctxFinal.restore();
-    if (molduraImg.complete) ctxFinal.drawImage(molduraImg, 0, 0, 1080, 1920);
-    showResult(canvasFinal.toDataURL('image/jpeg', 0.9), 'image');
 }
 </script>
 </body>
