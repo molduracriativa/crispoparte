@@ -16,7 +16,7 @@
         #editorCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 7; background: #000; display: none; }
         #canvasPreview, #videoPreview { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; background: black; display: none; z-index: 10; }
         
-        #iosImageResult { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; z-index: 20; display: none; }
+        #iosImageResult { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; z-index: 20; display: none; pointer-events: auto; }
         #molduraImagePreview { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: bottom; pointer-events: none; z-index: 15; display: none; }
         #canvasFinal { display: none; }
         
@@ -35,7 +35,6 @@
 
         .capture-controls { position: relative; z-index: 2; display: flex; gap: 10px; align-items: center; }
 
-        /* Botões Invisíveis */
         .btn-photo, .btn-boom, .btn-gallery, .btn-video { opacity: 0 !important; border: none !important; background: transparent !important; cursor: pointer; outline: none; }
         .btn-ui { padding: 10px 20px; background: rgba(0,0,0,0.6); border: 1px solid #fff; border-radius: 20px; color: #fff; cursor: pointer; backdrop-filter: blur(5px); }
         
@@ -49,7 +48,7 @@
         .actions-box { display: flex; flex-direction: column; gap: 10px; width: 85%; pointer-events: auto; }
         .btn-res { padding: 18px; border-radius: 15px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; text-align: center; text-decoration: none; color: #fff; }
         
-        #iosTip { font-size: 14px; color: #ffeb3b; text-align: center; margin-bottom: 10px; display: none; }
+        #iosTip { font-size: 16px; color: #fff; text-align: center; margin-bottom: 15px; display: none; background: #25D366; padding: 10px; border-radius: 10px; font-weight: bold; }
         #startScreen { position: absolute; inset: 0; background: #000 url('capajpg.jpg') center/cover no-repeat; display: flex; align-items: center; justify-content: center; z-index: 100; }
         #startBtn { padding: 25px 55px; font-size: 24px; font-weight: bold; border: none; background: #FF5722; color: #fff; border-radius: 50px; cursor: pointer; }
     </style>
@@ -96,7 +95,7 @@
 
     <div id="resultUI">
         <div class="actions-box">
-            <div id="iosTip">👆 Pressione na foto para Salvar na Galeria</div>
+            <div id="iosTip">👆 Segure na imagem para SALVAR</div>
             <button id="downloadBtn" class="btn-res" style="background:var(--accent);">📥 BAIXAR ARQUIVO</button>
             <button id="newBtn" class="btn-res" style="background:#444;">🔄 VOLTAR</button>
         </div>
@@ -221,11 +220,15 @@ function showResult(url, type) {
 
     if (type === 'image') {
         if (isIOS) {
+            // LÓGICA iOS: Mostra o <img> para o usuário segurar e salvar
             iosImageResult.src = url; 
             iosImageResult.style.display = 'block';
             document.getElementById('iosTip').style.display = 'block';
+            document.getElementById('downloadBtn').style.display = 'none'; // Esconde botão que não funciona no iOS
         } else {
+            // LÓGICA ANDROID: Mostra no canvas e permite download direto
             canvasPreview.style.display = 'block';
+            document.getElementById('downloadBtn').style.display = 'block';
             canvasPreview.width = window.innerWidth; 
             canvasPreview.height = window.innerHeight;
             const img = new Image();
@@ -233,16 +236,20 @@ function showResult(url, type) {
             img.src = url;
         }
     } else {
+        // VÍDEO: Safari costuma permitir baixar vídeo ou salvar via compartilhamento
         videoPreview.style.display = 'block'; 
         videoPreview.src = url; 
         videoPreview.play();
+        document.getElementById('downloadBtn').style.display = 'block';
     }
 
     document.getElementById('downloadBtn').onclick = () => {
         const a = document.createElement('a'); 
         a.href = url;
         a.download = `registro_${Date.now()}.${type === 'image' ? 'jpg' : 'mp4'}`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
     };
 }
 
@@ -250,24 +257,21 @@ function resetAll() {
     isEditingGallery = false;
     if (animId) cancelAnimationFrame(animId);
     
-    // Reset de Vídeo
     videoPreview.pause();
     videoPreview.src = "";
     videoPreview.style.display = "none";
     
-    // Reset de Imagem
     iosImageResult.src = "";
     iosImageResult.style.display = "none";
     canvasPreview.style.display = "none";
     document.getElementById('iosTip').style.display = 'none';
+    document.getElementById('downloadBtn').style.display = 'block';
     
-    // UI
     document.getElementById('resultUI').style.display = 'none';
     document.getElementById('editUI').style.display = 'none';
     editorCanvas.style.display = 'none';
     document.getElementById('cameraUI').style.display = 'flex';
     
-    // Limpar input de arquivo
     fileInput.value = "";
 }
 
@@ -285,7 +289,6 @@ fileInput.onchange = e => {
                 editorCanvas.width = window.innerWidth; 
                 editorCanvas.height = window.innerHeight;
                 
-                // Ajuste inicial para caber na tela
                 const ratio = Math.min(editorCanvas.width / galleryImg.width, editorCanvas.height / galleryImg.height);
                 galleryTransform.sc = ratio;
                 galleryTransform.x = (editorCanvas.width - (galleryImg.width * ratio)) / 2;
@@ -334,7 +337,7 @@ function confirmGalleryEdit() {
     showResult(canvasFinal.toDataURL('image/jpeg', 0.95), 'image');
 }
 
-// --- CÂMERA E VÍDEO (RESTANTE) ---
+// --- CÂMERA E VÍDEO ---
 function startRecording(isBoom) {
     isRecording = true; recordedChunks = []; boomFrames = [];
     currentType = 'video';
