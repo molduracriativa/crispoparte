@@ -13,29 +13,38 @@
         #camera { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
         #camera.mirrored { transform: scaleX(-1); }
 
-        /* Previews */
+        /* Previews e Edição */
         #editorCanvas, #canvasPreview, #videoPreview { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; z-index: 6; background: #000; display: none; }
         #molduraImagePreview { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; object-position: bottom; pointer-events: none; z-index: 10; display: block; }
+        #canvasFinal { display: none; }
 
         /* UI Layer */
         .ui-layer { position: absolute; inset: 0; pointer-events: none; z-index: 40; display: flex; flex-direction: column; justify-content: space-between; padding: 40px 20px; }
-        
-        /* Ajuste do topo para garantir que os botões apareçam */
         .top-bar { display: flex; justify-content: space-between; align-items: flex-start; pointer-events: auto; z-index: 50; }
         
         .moldura-selector { display: flex; gap: 10px; }
         .btn-m { padding: 10px 20px; background: rgba(0,0,0,0.6); border: 2px solid rgba(255,255,255,0.3); border-radius: 20px; color: #fff; cursor: pointer; font-weight: bold; }
         .btn-m.active { border-color: var(--accent); background: rgba(37, 211, 102, 0.4); }
 
+        /* Rodapé e Botões Transparentes */
         .controls-bottom { display: flex; flex-direction: column; align-items: center; pointer-events: auto; width: 100%; }
         .custom-controls-wrapper { position: relative; width: 100%; display: flex; justify-content: center; align-items: center; min-height: 160px; }
-        .arte-botoes-bg { position: absolute; bottom: -10px; width: 100vw; max-width: 500px; pointer-events: none; }
+        .arte-botoes-bg { position: absolute; bottom: -10px; width: 100vw; max-width: 500px; pointer-events: none; z-index: 1; }
         
-        .capture-controls { position: relative; z-index: 2; display: flex; gap: 10px; }
-        .btn-hidden { opacity: 0; width: 60px; height: 60px; }
+        .capture-controls { position: relative; z-index: 5; display: flex; gap: 10px; align-items: center; }
+        .btn-hidden { opacity: 0; cursor: pointer; border: none; background: transparent; }
+        .area-galeria { width: 55px; height: 55px; }
+        .area-foto { width: 75px; height: 75px; }
+        .area-video { width: 90px; height: 90px; }
+        .area-boom { width: 65px; height: 65px; }
+
+        /* Telas de Resultado e Início */
+        #resultUI, #editUI { position: absolute; inset: 0; z-index: 60; display: none; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 50px; background: rgba(0,0,0,0.8); pointer-events: auto; }
+        .btn-res { width: 80%; padding: 15px; margin: 5px; border-radius: 15px; border: none; font-weight: bold; color: #fff; cursor: pointer; text-align: center; text-decoration: none; }
         
         #startScreen { position: absolute; inset: 0; background: #000 url('capajpg.jpg') center/cover; display: flex; align-items: center; justify-content: center; z-index: 100; }
-        #startBtn { padding: 25px 55px; font-size: 24px; border-radius: 50px; border: none; background: #FF5722; color: #fff; cursor: pointer; }
+        #startBtn { padding: 25px 55px; font-size: 24px; border-radius: 50px; border: none; background: #FF5722; color: #fff; cursor: pointer; font-weight: bold; }
+        #recordingTimer { background: red; padding: 5px 10px; border-radius: 10px; display: none; font-weight: bold; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -58,46 +67,158 @@
         </div>
         
         <div class="controls-bottom">
+            <div id="recordingTimer">00:00</div>
             <div class="custom-controls-wrapper">
                 <img src="botoes.png" class="arte-botoes-bg">
                 <div class="capture-controls">
-                    <button id="galleryBtn" class="btn-hidden"></button>
+                    <button id="galleryBtn" class="btn-hidden area-galeria"></button>
                     <input type="file" id="fileInput" accept="image/*" style="display:none;">
-                    <button id="capturePhotoBtn" class="btn-hidden"></button>
-                    <button id="captureVideoBtn" class="btn-hidden"></button>
-                    <button id="boomerangBtn" class="btn-hidden"></button>
+                    <button id="capturePhotoBtn" class="btn-hidden area-foto"></button>
+                    <button id="captureVideoBtn" class="btn-hidden area-video"></button>
+                    <button id="boomerangBtn" class="btn-hidden area-boom"></button>
                 </div>
             </div>
         </div>
+    </div>
+
+    <div id="editUI">
+        <button id="confirmEditBtn" class="btn-res" style="background:var(--accent);">✅ CONFIRMAR</button>
+        <button id="cancelEditBtn" class="btn-res" style="background:#666;">❌ CANCELAR</button>
+    </div>
+
+    <div id="resultUI">
+        <a id="downloadBtn" class="btn-res" style="background:var(--accent);">📥 BAIXAR</a>
+        <button id="newBtn" class="btn-res" style="background:#666;">🔄 NOVO</button>
     </div>
     
     <div id="startScreen"><button id="startBtn">INICIAR CÂMERA</button></div>
 </div>
 
 <script>
-// Mantendo a lógica de molduras
 const MOLDURAS = { 'm1': 'moldura1.png', 'm2': 'moldura2.png' };
-let currentKey = 'm1';
+let currentKey = 'm1', usingFront = true, stream = null, isRecording = false;
+let mediaRecorder = null, recordedChunks = [], recordingStart = 0;
 
-// Lógica de troca de moldura
+const video = document.getElementById('camera');
+const molduraImg = document.getElementById('molduraImagePreview');
+const cFinal = document.getElementById('canvasFinal'), ctxF = cFinal.getContext('2d');
+
+// --- CONTROLES MOLDURA ---
 function setMoldura(key, btn) {
     document.querySelectorAll('.btn-m').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     currentKey = key;
-    document.getElementById('molduraImagePreview').src = MOLDURAS[key];
+    molduraImg.src = MOLDURAS[key];
 }
-
 document.getElementById('m1Btn').onclick = (e) => setMoldura('m1', e.target);
 document.getElementById('m2Btn').onclick = (e) => setMoldura('m2', e.target);
 
-// Iniciar Câmera
+// --- CÂMERA ---
+async function initCamera() {
+    if(stream) stream.getTracks().forEach(t => t.stop());
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: usingFront ? 'user' : 'environment' },
+            audio: true
+        });
+        video.srcObject = stream;
+        video.classList.toggle('mirrored', usingFront);
+    } catch (e) { alert("Erro ao acessar câmera."); }
+}
+
 document.getElementById('startBtn').onclick = () => {
     document.getElementById('startScreen').style.display = 'none';
     document.getElementById('cameraUI').style.display = 'flex';
-    navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(s => {
-        document.getElementById('camera').srcObject = s;
-    });
+    initCamera();
 };
+
+document.getElementById('switchBtn').onclick = () => {
+    usingFront = !usingFront;
+    initCamera();
+};
+
+// --- CAPTURA FOTO ---
+function takePhoto() {
+    cFinal.width = 1080; cFinal.height = 1920;
+    drawToCanvas(ctxF, 1080, 1920);
+    showResult(cFinal.toDataURL('image/jpeg', 0.9), 'image');
+}
+document.getElementById('capturePhotoBtn').onclick = takePhoto;
+
+// --- CAPTURA VÍDEO ---
+function startRecording() {
+    isRecording = true; recordedChunks = [];
+    document.getElementById('recordingTimer').style.display = 'block';
+    recordingStart = Date.now();
+    
+    cFinal.width = 720; cFinal.height = 1280;
+    const streamC = cFinal.captureStream(30);
+    if (stream.getAudioTracks().length) streamC.addTrack(stream.getAudioTracks()[0]);
+    
+    mediaRecorder = new MediaRecorder(streamC, { mimeType: 'video/webm' });
+    mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
+    mediaRecorder.onstop = () => showResult(URL.createObjectURL(new Blob(recordedChunks, {type:'video/mp4'})), 'video');
+    mediaRecorder.start();
+
+    const loop = () => {
+        if(isRecording) {
+            drawToCanvas(ctxF, 720, 1280);
+            updateTimer();
+            requestAnimationFrame(loop);
+        }
+    };
+    loop();
+}
+
+function stopRecording() {
+    isRecording = false;
+    document.getElementById('recordingTimer').style.display = 'none';
+    mediaRecorder.stop();
+}
+
+document.getElementById('captureVideoBtn').onclick = () => isRecording ? stopRecording() : startRecording();
+
+// --- FUNÇÕES AUXILIARES ---
+function drawToCanvas(ctx, w, h) {
+    ctx.save();
+    ctx.translate(w/2, h/2);
+    if (usingFront) ctx.scale(-1, 1);
+    const r = video.videoWidth / video.videoHeight;
+    let dw = w, dh = w / r;
+    if (dh < h) { dh = h; dw = h * r; }
+    ctx.drawImage(video, -dw/2, -dh/2, dw, dh);
+    ctx.restore();
+    
+    const ratio = molduraImg.naturalWidth / molduraImg.naturalHeight;
+    const th = w / ratio;
+    ctx.drawImage(molduraImg, 0, h - th, w, th);
+}
+
+function showResult(url, type) {
+    document.getElementById('cameraUI').style.display = 'none';
+    document.getElementById('resultUI').style.display = 'flex';
+    if(type === 'image') {
+        const pre = document.getElementById('canvasPreview');
+        pre.style.display = 'block';
+        pre.width = window.innerWidth; pre.height = window.innerHeight;
+        const img = new Image();
+        img.onload = () => pre.getContext('2d').drawImage(img, 0, 0, pre.width, pre.height);
+        img.src = url;
+    } else {
+        const vPre = document.getElementById('videoPreview');
+        vPre.style.display = 'block'; vPre.src = url; vPre.play();
+    }
+    document.getElementById('downloadBtn').href = url;
+    document.getElementById('downloadBtn').download = `registro_${Date.now()}.${type === 'image' ? 'jpg' : 'mp4'}`;
+}
+
+function updateTimer() {
+    const s = Math.floor((Date.now() - recordingStart) / 1000);
+    document.getElementById('recordingTimer').innerText = `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+}
+
+document.getElementById('newBtn').onclick = () => location.reload();
+document.getElementById('galleryBtn').onclick = () => document.getElementById('fileInput').click();
 </script>
 </body>
 </html>
