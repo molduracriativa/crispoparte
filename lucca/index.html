@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-    <title>Lucca 1 Ano</title>
+    <title>Matheus 1 Ano</title>
     <style>
         :root { --accent: #25D366; --record: #ff0000; --boom: #e1306c; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -16,7 +16,9 @@
         #editorCanvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 7; background: #000; display: none; }
         #canvasPreview, #videoPreview { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; background: black; display: none; z-index: 10; }
         
+        /* Suporte para iOS - Imagem de resultado */
         #iosImageResult { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; z-index: 20; display: none; }
+
         #molduraImagePreview { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; object-position: bottom; pointer-events: none; z-index: 15; display: none; }
         #canvasFinal { display: none; }
         
@@ -28,35 +30,53 @@
 
         .boom-loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); padding: 25px; border-radius: 20px; display: none; z-index: 100; border: 2px solid var(--boom); text-align: center; }
         
-        /* Ajuste para a arte 9:16 transparente */
-        .controls-bottom { position: relative; display: flex; flex-direction: column; align-items: center; gap: 15px; pointer-events: auto; width: 100%; min-height: 200px; padding-bottom: 30px; }
+        /* --- ESTRUTURA DA ARTE BOTOES.PNG --- */
+        .controls-bottom { display: flex; flex-direction: column; align-items: center; pointer-events: auto; width: 100%; }
         
-        #botoeVisual { 
-            position: absolute; 
-            inset: 0; 
-            width: 100vw; 
-            height: 100dvh; 
-            object-fit: cover; 
-            z-index: -1; 
+        .custom-controls-wrapper {
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 150px; /* Garante espaço para a arte */
+        }
+
+        .arte-botoes-bg {
+            position: absolute;
+            bottom: -20px; /* Ajuste conforme necessário para alinhar */
+            width: 100vw;
+            height: auto;
+            max-width: 500px;
             pointer-events: none;
-            /* Movemos para fora da controls-bottom para ele ocupar a tela toda como a moldura */
-            position: fixed;
-            top: 0;
-            left: 0;
+            z-index: 1;
+        }
+
+        .capture-controls { 
+            position: relative; 
+            z-index: 2; 
+            display: flex; 
+            gap: 10px; 
+            align-items: center; 
+        }
+
+        /* Botões Originais Invisíveis mas Ativos */
+        .btn-photo, .btn-boom, .btn-gallery, .btn-video {
+            opacity: 0 !important; 
+            border: none !important;
+            background: transparent !important;
+            cursor: pointer;
+            outline: none;
         }
 
         .btn-ui { padding: 10px 20px; background: rgba(0,0,0,0.6); border: 1px solid #fff; border-radius: 20px; color: #fff; cursor: pointer; backdrop-filter: blur(5px); }
         
-        /* Botões invisíveis posicionados sobre a arte */
-        .capture-controls { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
-        .btn-photo { width: 65px; height: 65px; border-radius: 50%; border: none; background: transparent; cursor: pointer; }
-        .btn-boom { width: 65px; height: 65px; border-radius: 50%; border: none; background: transparent; cursor: pointer; }
-        .btn-gallery { width: 60px; height: 60px; border-radius: 12px; border: none; background: transparent; cursor: pointer; }
-        .btn-video { width: 85px; height: 85px; border-radius: 50%; border: none; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        /* Tamanhos das áreas de clique (Ajuste para casar com sua arte) */
+        .btn-gallery { width: 50px; height: 50px; }
+        .btn-photo { width: 70px; height: 70px; }
+        .btn-video { width: 85px; height: 85px; }
+        .btn-boom { width: 60px; height: 60px; }
         
-        /* Esconde ícones originais para usar apenas a arte botoe.png */
-        .btn-photo, .btn-boom, .btn-gallery, .btn-video svg { opacity: 0; }
-
         #editUI { display: none; pointer-events: auto; text-align: center; }
         #resultUI { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 50px; z-index: 40; background: rgba(0,0,0,0.85); }
         .actions-box { display: flex; flex-direction: column; gap: 10px; width: 85%; pointer-events: auto; }
@@ -79,24 +99,24 @@
     <img id="iosImageResult" alt="Resultado Final" />
     
     <img id="molduraImagePreview" src="" />
-    <img src="botoe.png" id="botoeVisual" style="display:none;">
-
     <div class="boom-loading" id="boomLoading">🚀 Criando seu Boomerang...</div>
 
     <div class="ui-layer" id="cameraUI" style="display:none;">
         <div class="top-bar"><button class="btn-ui" id="switchBtn">🔄 INVERTER</button></div>
+        
         <div class="controls-bottom">
             <div id="videoTimer">00:00</div>
             
-            <div class="capture-controls">
-                <button id="galleryBtn" class="btn-gallery">🖼️</button>
-                <input type="file" id="fileInput" accept="image/*" style="display:none;">
-                <button id="capturePhotoBtn" class="btn-photo">📷</button>
-                <button id="captureVideoBtn" class="btn-video">
-                    <svg id="camIcon" viewBox="0 0 24 24" width="40" height="40" fill="white"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
-                    <div id="stopIcon" class="stop-square" style="display:none; background:red; width:30px; height:30px; border-radius:4px; opacity:1 !important;"></div>
-                </button>
-                <button id="boomerangBtn" class="btn-boom">∞</button>
+            <div class="custom-controls-wrapper">
+                <img src="botoes.png" class="arte-botoes-bg" id="arteBotoes">
+                
+                <div class="capture-controls">
+                    <button id="galleryBtn" class="btn-gallery">G</button>
+                    <input type="file" id="fileInput" accept="image/*" style="display:none;">
+                    <button id="capturePhotoBtn" class="btn-photo">P</button>
+                    <button id="captureVideoBtn" class="btn-video">V</button>
+                    <button id="boomerangBtn" class="btn-boom">B</button>
+                </div>
             </div>
         </div>
     </div>
@@ -123,14 +143,13 @@
 </div>
 
 <script>
-// Mantive toda a sua lógica funcional intacta. 
-// A única mudança foi exibir a arte botoe.png junto com a moldura.
-
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
 let usingFrontCamera = true, stream = null, isRecording = false, mediaRecorder = null, recordedChunks = [];
 let currentFileUrl = null, boomFrames = [], currentType = 'image';
 let recordStartTime, timerInterval;
 const BOOM_CAPTURE_TIME = 1200; 
+
 let currentScale = 1, startDistance = 0, baseScale = 1;
 let isEditingGallery = false, galleryImg = new Image(), animId = null;
 let galleryTransform = { x: 0, y: 0, sc: 1, lx: 0, ly: 0, ld: 0 };
@@ -141,7 +160,6 @@ const video = document.getElementById('camera'),
       videoPreview = document.getElementById('videoPreview'),
       iosImageResult = document.getElementById('iosImageResult'),
       molduraImg = document.getElementById('molduraImagePreview'),
-      botoeVisual = document.getElementById('botoeVisual'),
       editorCanvas = document.getElementById('editorCanvas'),
       eCtx = editorCanvas.getContext('2d'),
       ctxFinal = canvasFinal.getContext('2d', { alpha: false }),
@@ -159,7 +177,7 @@ document.getElementById('galleryBtn').onclick = () => fileInput.click();
 document.getElementById('cancelEditBtn').onclick = resetAll;
 document.getElementById('confirmEditBtn').onclick = confirmGalleryEdit;
 
-// Lógica de Zoom e Gestos (Mantida)
+// --- GESTOS E ZOOM ---
 mainStage.addEventListener('touchstart', (e) => {
     if (isEditingGallery) {
         if (e.touches.length === 1) {
@@ -210,7 +228,6 @@ async function initCamera() {
             document.getElementById('cameraUI').style.display = 'flex';
             molduraImg.src = 'moldura1.png'; 
             molduraImg.style.display = 'block';
-            botoeVisual.style.display = 'block'; // Mostra a arte dos botões
         };
     } catch (e) { alert("Câmera não disponível."); }
 }
@@ -231,12 +248,8 @@ function takePhoto() {
     currentType = 'image';
     canvasFinal.width = 1080; canvasFinal.height = 1920;
     drawFrame(ctxFinal, 1080, 1920);
-    showResult(canvasFinal.toDataURL('image/jpeg', 0.9), 'image');
-}
-
-function getSupportedMime() {
-    const types = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=h264', 'video/webm'];
-    return types.find(t => MediaRecorder.isTypeSupported(t)) || '';
+    const dataUrl = canvasFinal.toDataURL('image/jpeg', 0.9);
+    showResult(dataUrl, 'image');
 }
 
 function startRecording(isBoom) {
@@ -246,14 +259,14 @@ function startRecording(isBoom) {
         captureBoomerang(Date.now());
     } else {
         startTimer();
-        document.getElementById('stopIcon').style.display = 'block';
+        document.getElementById('captureVideoBtn').classList.add('recording');
         canvasFinal.width = 720; canvasFinal.height = 1280;
         const canvasStream = canvasFinal.captureStream(30);
         if (stream.getAudioTracks().length > 0) canvasStream.addTrack(stream.getAudioTracks()[0]);
-        mediaRecorder = new MediaRecorder(canvasStream, { mimeType: getSupportedMime() });
+        mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
         mediaRecorder.ondataavailable = e => { if(e.data.size > 0) recordedChunks.push(e.data); };
         mediaRecorder.onstop = () => {
-            currentFileUrl = URL.createObjectURL(new Blob(recordedChunks, { type: mediaRecorder.mimeType }));
+            currentFileUrl = URL.createObjectURL(new Blob(recordedChunks, { type: 'video/mp4' }));
             showResult(currentFileUrl, 'video');
         };
         mediaRecorder.start();
@@ -262,14 +275,55 @@ function startRecording(isBoom) {
     }
 }
 
-function startTimer() { videoTimer.style.display = 'block'; recordStartTime = Date.now(); timerInterval = setInterval(() => { const seconds = Math.floor((Date.now() - recordStartTime) / 1000); videoTimer.innerText = `${Math.floor(seconds/60).toString().padStart(2,'0')}:${(seconds%60).toString().padStart(2,'0')}`; }, 1000); }
-function stopTimer() { clearInterval(timerInterval); videoTimer.style.display = 'none'; }
-function stopRecording() { isRecording = false; stopTimer(); document.getElementById('stopIcon').style.display = 'none'; if(mediaRecorder) mediaRecorder.stop(); }
+function stopRecording() {
+    isRecording = false; stopTimer();
+    document.getElementById('captureVideoBtn').classList.remove('recording');
+    if(mediaRecorder) mediaRecorder.stop();
+}
+
+function captureBoomerang(startTime) {
+    canvasFinal.width = 720; canvasFinal.height = 1280;
+    const interval = setInterval(() => {
+        if (Date.now() - startTime >= BOOM_CAPTURE_TIME) {
+            clearInterval(interval); isRecording = false; processBoomerang();
+        } else {
+            const fCanvas = document.createElement('canvas');
+            fCanvas.width = 720; fCanvas.height = 1280;
+            const fCtx = fCanvas.getContext('2d');
+            fCtx.drawImage(video, 0, 0, 720, 1280);
+            boomFrames.push(fCanvas);
+        }
+    }, 40); 
+}
+
+function processBoomerang() {
+    document.getElementById('boomLoading').style.display = 'block';
+    const pingPong = [...boomFrames, ...[...boomFrames].reverse()];
+    const finalSequence = [...pingPong, ...pingPong];
+    const streamBoom = canvasFinal.captureStream(30);
+    const rec = new MediaRecorder(streamBoom, { mimeType: 'video/webm' });
+    rec.ondataavailable = e => { if(e.data.size > 0) recordedChunks.push(e.data); };
+    rec.onstop = () => {
+        document.getElementById('boomLoading').style.display = 'none';
+        currentFileUrl = URL.createObjectURL(new Blob(recordedChunks, { type: 'video/mp4' }));
+        showResult(currentFileUrl, 'video');
+    };
+    rec.start();
+    let idx = 0;
+    const playInterval = setInterval(() => {
+        if (idx >= finalSequence.length) { clearInterval(playInterval); rec.stop(); } 
+        else {
+            ctxFinal.clearRect(0,0,720,1280);
+            ctxFinal.drawImage(finalSequence[idx], 0, 0, 720, 1280);
+            if (molduraImg.complete) ctxFinal.drawImage(molduraImg, 0, 0, 720, 1280);
+            idx++;
+        }
+    }, 33);
+}
 
 function showResult(url, type) {
     document.getElementById('resultUI').style.display = 'flex';
     document.getElementById('cameraUI').style.display = 'none';
-    botoeVisual.style.display = 'none';
     if (type === 'image') {
         if (isIOS) {
             iosImageResult.src = url; iosImageResult.style.display = 'block';
@@ -277,37 +331,73 @@ function showResult(url, type) {
         } else {
             canvasPreview.style.display = 'block';
             canvasPreview.width = window.innerWidth; canvasPreview.height = window.innerHeight;
-            const img = new Image(); img.onload = () => canvasPreview.getContext('2d').drawImage(img, 0, 0, canvasPreview.width, canvasPreview.height); img.src = url;
+            const img = new Image();
+            img.onload = () => canvasPreview.getContext('2d').drawImage(img, 0, 0, canvasPreview.width, canvasPreview.height);
+            img.src = url;
         }
     } else {
         videoPreview.style.display = 'block'; videoPreview.src = url; videoPreview.play();
     }
-    document.getElementById('downloadBtn').onclick = () => { const a = document.createElement('a'); a.href = url; a.download = `foto_${Date.now()}.jpg`; a.click(); };
+    document.getElementById('downloadBtn').onclick = () => {
+        const a = document.createElement('a'); a.href = url;
+        a.download = `registro_${Date.now()}.${type === 'image' ? 'jpg' : 'mp4'}`;
+        a.click();
+    };
 }
 
 function resetAll() {
-    isRecording = false; stopTimer();
+    isEditingGallery = false; cancelAnimationFrame(animId);
     videoPreview.pause(); videoPreview.src = "";
-    iosImageResult.style.display = "none";
+    iosImageResult.src = ""; iosImageResult.style.display = "none";
     document.getElementById('resultUI').style.display = 'none';
+    document.getElementById('editUI').style.display = 'none';
     document.getElementById('cameraUI').style.display = 'flex';
-    botoeVisual.style.display = 'block';
     canvasPreview.style.display = 'none'; videoPreview.style.display = 'none';
 }
 
-// ... Restante das funções (Galeria, Switch) ...
+function startTimer() { videoTimer.style.display = 'block'; recordStartTime = Date.now(); timerInterval = setInterval(() => { const seconds = Math.floor((Date.now() - recordStartTime) / 1000); videoTimer.innerText = `${Math.floor(seconds/60).toString().padStart(2,'0')}:${(seconds%60).toString().padStart(2,'0')}`; }, 1000); }
+function stopTimer() { clearInterval(timerInterval); videoTimer.style.display = 'none'; }
+function switchCamera() { usingFrontCamera = !usingFrontCamera; initCamera(); }
+
+fileInput.onchange = e => {
+    if (e.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = ev => {
+            galleryImg = new Image();
+            galleryImg.onload = () => {
+                isEditingGallery = true;
+                document.getElementById('cameraUI').style.display = 'none';
+                document.getElementById('editUI').style.display = 'flex';
+                editorCanvas.style.display = 'block';
+                editorCanvas.width = window.innerWidth; editorCanvas.height = window.innerHeight;
+                galleryTransform.sc = editorCanvas.height / galleryImg.height;
+                galleryTransform.x = (editorCanvas.width - (galleryImg.width * galleryTransform.sc)) / 2;
+                renderEditor();
+            };
+            galleryImg.src = ev.target.result;
+        };
+        reader.readAsDataURL(e.target.files[0]);
+    }
+};
+
+function renderEditor() {
+    if (!isEditingGallery) return;
+    eCtx.fillStyle = "#000"; eCtx.fillRect(0, 0, editorCanvas.width, editorCanvas.height);
+    eCtx.save(); eCtx.translate(galleryTransform.x, galleryTransform.y);
+    eCtx.scale(galleryTransform.sc, galleryTransform.sc); eCtx.drawImage(galleryImg, 0, 0);
+    eCtx.restore(); animId = requestAnimationFrame(renderEditor);
+}
+
 function confirmGalleryEdit() {
     isEditingGallery = false; cancelAnimationFrame(animId);
-    currentType = 'image'; canvasFinal.width = 1080; canvasFinal.height = 1920;
+    canvasFinal.width = 1080; canvasFinal.height = 1920;
     const s = 1080 / editorCanvas.width;
-    ctxFinal.fillStyle = "#000"; ctxFinal.fillRect(0,0,1080,1920);
     ctxFinal.save(); ctxFinal.translate(galleryTransform.x * s, galleryTransform.y * s);
     ctxFinal.scale(galleryTransform.sc * s, galleryTransform.sc * s);
     ctxFinal.drawImage(galleryImg, 0, 0); ctxFinal.restore();
     if (molduraImg.complete) ctxFinal.drawImage(molduraImg, 0, 0, 1080, 1920);
     showResult(canvasFinal.toDataURL('image/jpeg', 0.9), 'image');
 }
-function switchCamera() { usingFrontCamera = !usingFrontCamera; initCamera(); }
 </script>
 </body>
 </html>
