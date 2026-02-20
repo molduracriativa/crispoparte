@@ -22,39 +22,38 @@
         .ui-layer { position: absolute; inset: 0; pointer-events: none; z-index: 40; display: flex; flex-direction: column; justify-content: space-between; padding: 40px 20px; }
         .top-bar { display: flex; justify-content: space-between; align-items: flex-start; pointer-events: auto; z-index: 50; width: 100%; }
         
-        /* Botões do Topo Padronizados */
         .moldura-selector { display: flex; gap: 8px; }
-        .btn-m { padding: 12px 18px; background: rgba(0,0,0,0.6); border: 2px solid rgba(255,255,255,0.3); border-radius: 20px; color: #fff; cursor: pointer; font-weight: bold; font-size: 13px; text-transform: uppercase; }
+        .btn-m { padding: 10px 16px; background: rgba(0,0,0,0.6); border: 2px solid rgba(255,255,255,0.3); border-radius: 20px; color: #fff; cursor: pointer; font-weight: bold; font-size: 12px; text-transform: uppercase; }
         .btn-m.active { border-color: var(--accent); background: rgba(37, 211, 102, 0.4); }
 
         /* Rodapé e Botões Transparentes */
         .controls-bottom { display: flex; flex-direction: column; align-items: center; pointer-events: auto; width: 100%; z-index: 60; }
-        .custom-controls-wrapper { position: relative; width: 100%; display: flex; justify-content: center; align-items: center; min-height: 160px; pointer-events: none; }
-        .arte-botoes-bg { position: absolute; bottom: -10px; width: 100vw; max-width: 500px; pointer-events: none; z-index: 1; }
+        .custom-controls-wrapper { position: relative; width: 100%; display: flex; justify-content: center; align-items: center; min-height: 140px; pointer-events: none; }
+        .arte-botoes-bg { position: absolute; bottom: -5px; width: 100vw; max-width: 500px; pointer-events: none; z-index: 1; }
         
-        .capture-controls { position: relative; z-index: 99; display: flex; gap: 15px; align-items: center; pointer-events: auto; }
-        .btn-hidden { opacity: 0; cursor: pointer; border: none; background: rgba(255,255,255,0.1); } /* background leve para debug se precisar */
+        .capture-controls { position: relative; z-index: 99; display: flex; gap: 10px; align-items: center; pointer-events: auto; }
+        .btn-hidden { opacity: 0; cursor: pointer; border: none; background: transparent; }
         
-        /* Áreas de toque ajustadas para a imagem botoes.png */
-        .area-galeria { width: 60px; height: 60px; border-radius: 50%; }
-        .area-foto { width: 80px; height: 80px; border-radius: 50%; }
-        .area-video { width: 100px; height: 100px; border-radius: 50%; }
-        .area-boom { width: 70px; height: 70px; border-radius: 50%; }
+        /* Ajuste fino das áreas de clique sobre o botoes.png */
+        .area-galeria { width: 50px; height: 50px; }
+        .area-foto { width: 70px; height: 70px; }
+        .area-video { width: 90px; height: 90px; }
+        .area-boom { width: 60px; height: 60px; }
 
-        /* Telas de Resultado e Início */
-        #resultUI, #editUI { position: absolute; inset: 0; z-index: 100; display: none; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 60px; background: rgba(0,0,0,0.9); pointer-events: auto; }
+        /* Resultado */
+        #resultUI { position: absolute; inset: 0; z-index: 100; display: none; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 60px; background: rgba(0,0,0,0.9); pointer-events: auto; }
         .btn-res { width: 85%; padding: 18px; margin: 8px; border-radius: 20px; border: none; font-weight: bold; font-size: 16px; color: #fff; cursor: pointer; text-align: center; text-decoration: none; }
         
+        /* Botão Iniciar Camera Reduzido */
         #startScreen { position: absolute; inset: 0; background: #000 url('capajpg.jpg') center/cover; display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        #startBtn { padding: 25px 60px; font-size: 24px; border-radius: 50px; border: none; background: #FF5722; color: #fff; cursor: pointer; font-weight: bold; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
-        #recordingTimer { background: red; padding: 6px 15px; border-radius: 12px; display: none; font-weight: bold; margin-bottom: 15px; font-family: monospace; font-size: 20px; }
+        #startBtn { padding: 18px 40px; font-size: 18px; border-radius: 40px; border: none; background: #FF5722; color: #fff; cursor: pointer; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.4); }
+        #recordingTimer { background: red; padding: 6px 15px; border-radius: 12px; display: none; font-weight: bold; margin-bottom: 10px; font-size: 18px; }
     </style>
 </head>
 <body>
 
 <div class="stage" id="mainStage">
     <video id="camera" autoplay playsinline muted></video>
-    <canvas id="editorCanvas"></canvas>
     <canvas id="canvasPreview"></canvas>
     <canvas id="canvasFinal"></canvas>
     <video id="videoPreview" playsinline controls loop></video>
@@ -74,11 +73,11 @@
             <div class="custom-controls-wrapper">
                 <img src="botoes.png" class="arte-botoes-bg">
                 <div class="capture-controls">
-                    <button id="galleryBtn" class="btn-hidden area-galeria" title="Galeria"></button>
+                    <button id="galleryBtn" class="btn-hidden area-galeria"></button>
                     <input type="file" id="fileInput" accept="image/*" style="display:none;">
-                    <button id="capturePhotoBtn" class="btn-hidden area-foto" title="Foto"></button>
-                    <button id="captureVideoBtn" class="btn-hidden area-video" title="Vídeo"></button>
-                    <button id="boomerangBtn" class="btn-hidden area-boom" title="Boomerang"></button>
+                    <button id="capturePhotoBtn" class="btn-hidden area-foto"></button>
+                    <button id="captureVideoBtn" class="btn-hidden area-video"></button>
+                    <button id="boomerangBtn" class="btn-hidden area-boom"></button>
                 </div>
             </div>
         </div>
@@ -100,6 +99,7 @@ let mediaRecorder = null, recordedChunks = [], recordingStart = 0;
 const video = document.getElementById('camera');
 const molduraImg = document.getElementById('molduraImagePreview');
 const cFinal = document.getElementById('canvasFinal'), ctxF = cFinal.getContext('2d');
+const fileInput = document.getElementById('fileInput');
 
 // --- TROCA DE MOLDURA ---
 function setMoldura(key, btn) {
@@ -113,26 +113,15 @@ document.getElementById('m2Btn').onclick = (e) => setMoldura('m2', e.target);
 
 // --- LÓGICA DA CÂMERA ---
 async function initCamera() {
-    if(stream) {
-        stream.getTracks().forEach(t => t.stop());
-    }
-    const constraints = {
-        video: { 
-            facingMode: usingFront ? 'user' : 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
-        },
-        audio: true
-    };
+    if(stream) stream.getTracks().forEach(t => t.stop());
     try {
-        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: usingFront ? 'user' : 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+            audio: true
+        });
         video.srcObject = stream;
-        video.onloadedmetadata = () => video.play();
         video.classList.toggle('mirrored', usingFront);
-    } catch (e) {
-        console.error(e);
-        alert("Câmera não disponível ou permissão negada.");
-    }
+    } catch (e) { alert("Câmera não disponível."); }
 }
 
 document.getElementById('startBtn').onclick = () => {
@@ -146,49 +135,70 @@ document.getElementById('switchBtn').onclick = () => {
     initCamera();
 };
 
-// --- CAPTURA DE FOTO ---
-document.getElementById('capturePhotoBtn').onclick = () => {
-    cFinal.width = 1080; cFinal.height = 1920;
-    drawToCanvas(ctxF, 1080, 1920);
-    showResult(cFinal.toDataURL('image/jpeg', 0.9), 'image');
-};
+// --- GALERIA (RESTAURADA) ---
+document.getElementById('galleryBtn').onclick = () => fileInput.click();
 
-// --- CAPTURA DE VÍDEO ---
-document.getElementById('captureVideoBtn').onclick = () => {
-    if (isRecording) {
-        stopRecording();
-    } else {
-        startRecording();
+fileInput.onchange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+                cFinal.width = 1080; cFinal.height = 1920;
+                // Desenha fundo preto
+                ctxF.fillStyle = "#000";
+                ctxF.fillRect(0,0,1080,1920);
+                // Desenha imagem da galeria (ajuste proporcional)
+                const ratio = img.width / img.height;
+                let dw = 1080, dh = 1080 / ratio;
+                if (dh < 1920) { dh = 1920; dw = 1920 * ratio; }
+                ctxF.drawImage(img, (1080-dw)/2, (1920-dh)/2, dw, dh);
+                // Aplica moldura
+                drawMolduraOverlay(ctxF, 1080, 1920);
+                showResult(cFinal.toDataURL('image/jpeg', 0.9), 'image');
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
     }
 };
 
+// --- CAPTURAS ---
+document.getElementById('capturePhotoBtn').onclick = () => {
+    cFinal.width = 1080; cFinal.height = 1920;
+    drawCameraToCanvas(ctxF, 1080, 1920);
+    drawMolduraOverlay(ctxF, 1080, 1920);
+    showResult(cFinal.toDataURL('image/jpeg', 0.9), 'image');
+};
+
+document.getElementById('captureVideoBtn').onclick = () => {
+    if (isRecording) stopRecording(); else startRecording();
+};
+
 function startRecording() {
-    isRecording = true;
-    recordedChunks = [];
+    isRecording = true; recordedChunks = [];
     document.getElementById('recordingTimer').style.display = 'block';
     recordingStart = Date.now();
-    
     cFinal.width = 720; cFinal.height = 1280;
     const streamC = cFinal.captureStream(30);
-    const audioTracks = stream.getAudioTracks();
-    if (audioTracks.length > 0) streamC.addTrack(audioTracks[0]);
-    
-    mediaRecorder = new MediaRecorder(streamC, { mimeType: 'video/webm;codecs=vp8' });
-    mediaRecorder.ondataavailable = e => { if(e.data.size > 0) recordedChunks.push(e.data); };
+    if (stream.getAudioTracks().length) streamC.addTrack(stream.getAudioTracks()[0]);
+    mediaRecorder = new MediaRecorder(streamC, { mimeType: 'video/webm' });
+    mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
     mediaRecorder.onstop = () => {
         const blob = new Blob(recordedChunks, { type: 'video/mp4' });
         showResult(URL.createObjectURL(blob), 'video');
     };
     mediaRecorder.start();
-
-    const renderLoop = () => {
+    const loop = () => {
         if(isRecording) {
-            drawToCanvas(ctxF, 720, 1280);
+            drawCameraToCanvas(ctxF, 720, 1280);
+            drawMolduraOverlay(ctxF, 720, 1280);
             updateTimer();
-            requestAnimationFrame(renderLoop);
+            requestAnimationFrame(loop);
         }
     };
-    renderLoop();
+    loop();
 }
 
 function stopRecording() {
@@ -197,8 +207,8 @@ function stopRecording() {
     if(mediaRecorder) mediaRecorder.stop();
 }
 
-// --- FUNÇÕES DE DESENHO E RESULTADO ---
-function drawToCanvas(ctx, w, h) {
+// --- FUNÇÕES DE APOIO ---
+function drawCameraToCanvas(ctx, w, h) {
     ctx.save();
     ctx.translate(w/2, h/2);
     if (usingFront) ctx.scale(-1, 1);
@@ -207,8 +217,9 @@ function drawToCanvas(ctx, w, h) {
     if (dh < h) { dh = h; dw = h * r; }
     ctx.drawImage(video, -dw/2, -dh/2, dw, dh);
     ctx.restore();
-    
-    // Desenha a moldura por cima
+}
+
+function drawMolduraOverlay(ctx, w, h) {
     const ratio = molduraImg.naturalWidth / molduraImg.naturalHeight;
     const th = w / ratio;
     ctx.drawImage(molduraImg, 0, h - th, w, th);
@@ -217,24 +228,18 @@ function drawToCanvas(ctx, w, h) {
 function showResult(url, type) {
     document.getElementById('cameraUI').style.display = 'none';
     document.getElementById('resultUI').style.display = 'flex';
-    
     if(type === 'image') {
         const pre = document.getElementById('canvasPreview');
-        pre.style.display = 'block';
-        pre.width = window.innerWidth; pre.height = window.innerHeight;
+        pre.style.display = 'block'; pre.width = window.innerWidth; pre.height = window.innerHeight;
         const img = new Image();
         img.onload = () => pre.getContext('2d').drawImage(img, 0, 0, pre.width, pre.height);
         img.src = url;
     } else {
         const vPre = document.getElementById('videoPreview');
-        vPre.style.display = 'block'; 
-        vPre.src = url;
-        vPre.play();
+        vPre.style.display = 'block'; vPre.src = url; vPre.play();
     }
-    
-    const dBtn = document.getElementById('downloadBtn');
-    dBtn.href = url;
-    dBtn.download = `filtro_lucca_${Date.now()}.${type === 'image' ? 'jpg' : 'mp4'}`;
+    document.getElementById('downloadBtn').href = url;
+    document.getElementById('downloadBtn').download = `registro_${Date.now()}.${type === 'image' ? 'jpg' : 'mp4'}`;
 }
 
 function updateTimer() {
@@ -242,10 +247,8 @@ function updateTimer() {
     document.getElementById('recordingTimer').innerText = `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
 }
 
-// Outros botões
 document.getElementById('newBtn').onclick = () => location.reload();
-document.getElementById('galleryBtn').onclick = () => document.getElementById('fileInput').click();
-document.getElementById('boomerangBtn').onclick = () => alert("Efeito Boomerang iniciado! (Funcionalidade em processamento)");
+document.getElementById('boomerangBtn').onclick = () => alert("Boomerang: Mantenha pressionado (Em desenvolvimento)");
 </script>
 </body>
 </html>
