@@ -20,7 +20,7 @@
         #canvasFinal { display: none; }
         
         .ui-layer { position: absolute; inset: 0; pointer-events: none; z-index: 30; display: flex; flex-direction: column; justify-content: space-between; padding: 40px 20px; }
-        .top-bar { display: flex; justify-content: space-between; pointer-events: auto; gap: 10px; }
+        .top-bar { display: flex; justify-content: space-between; pointer-events: auto; gap: 8px; }
         
         #videoTimer { background: rgba(255, 0, 0, 0.7); padding: 5px 15px; border-radius: 10px; font-weight: bold; font-size: 18px; display: none; margin-bottom: 10px; animation: pulse 1s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
@@ -33,8 +33,11 @@
         .capture-controls { position: relative; z-index: 2; display: flex; gap: 10px; align-items: center; }
 
         .btn-photo, .btn-boom, .btn-gallery, .btn-video { opacity: 0 !important; border: none !important; background: transparent !important; cursor: pointer; outline: none; }
-        .btn-ui { padding: 10px 15px; background: rgba(0,0,0,0.6); border: 1px solid #fff; border-radius: 20px; color: #fff; cursor: pointer; backdrop-filter: blur(5px); font-size: 12px; }
+        .btn-ui { padding: 10px 12px; background: rgba(0,0,0,0.6); border: 1px solid #fff; border-radius: 20px; color: #fff; cursor: pointer; backdrop-filter: blur(5px); font-size: 11px; font-weight: bold; }
         
+        /* Estilo para botão de moldura ativo */
+        .btn-ui.active { background: var(--accent); border-color: var(--accent); }
+
         .btn-gallery { width: 55px; height: 55px; }
         .btn-photo { width: 75px; height: 75px; }
         .btn-video { width: 90px; height: 90px; }
@@ -65,7 +68,10 @@
     <div class="ui-layer" id="cameraUI" style="display:none;">
         <div class="top-bar">
             <button class="btn-ui" id="switchBtn">🔄 INVERTER</button>
-            <button class="btn-ui" id="toggleMolduraBtn">🖼️ MOLDURA 1</button>
+            <div style="display: flex; gap: 5px;">
+                <button class="btn-ui active" id="btnMoldura1">FOTO 1</button>
+                <button class="btn-ui" id="btnMoldura2">FOTO 2</button>
+            </div>
         </div>
         <div class="controls-bottom">
             <div id="videoTimer">00:00</div>
@@ -109,9 +115,6 @@ let currentFileUrl = null, boomFrames = [], currentType = 'image';
 let recordStartTime, timerInterval;
 const BOOM_CAPTURE_TIME = 1200; 
 
-// --- CONTROLE DE MOLDURA ---
-let currentMoldura = 1;
-
 let currentScale = 1, startDistance = 0, baseScale = 1;
 let isEditingGallery = false, galleryImg = new Image(), animId = null;
 let galleryTransform = { x: 0, y: 0, sc: 1, lx: 0, ly: 0, ld: 0 };
@@ -127,7 +130,8 @@ const video = document.getElementById('camera'),
       mainStage = document.getElementById('mainStage'),
       fileInput = document.getElementById('fileInput'),
       videoTimer = document.getElementById('videoTimer'),
-      toggleMolduraBtn = document.getElementById('toggleMolduraBtn');
+      btnM1 = document.getElementById('btnMoldura1'),
+      btnM2 = document.getElementById('btnMoldura2');
 
 document.getElementById('startBtn').onclick = initCamera;
 document.getElementById('switchBtn').onclick = switchCamera;
@@ -139,14 +143,22 @@ document.getElementById('galleryBtn').onclick = () => fileInput.click();
 document.getElementById('cancelEditBtn').onclick = resetAll;
 document.getElementById('confirmEditBtn').onclick = confirmGalleryEdit;
 
-// FUNÇÃO PARA TROCAR MOLDURA
-toggleMolduraBtn.onclick = () => {
-    currentMoldura = currentMoldura === 1 ? 2 : 1;
-    molduraImg.src = `moldura${currentMoldura}.png`;
-    toggleMolduraBtn.innerText = `🖼️ MOLDURA ${currentMoldura}`;
-};
+// --- LÓGICA DAS MOLDURAS (FOTO 1 / FOTO 2) ---
+function setMoldura(num) {
+    molduraImg.src = `moldura${num}.png`;
+    if(num === 1) {
+        btnM1.classList.add('active');
+        btnM2.classList.remove('active');
+    } else {
+        btnM2.classList.add('active');
+        btnM1.classList.remove('active');
+    }
+}
 
-// --- GESTOS ---
+btnM1.onclick = () => setMoldura(1);
+btnM2.onclick = () => setMoldura(2);
+
+// --- GESTOS E CÂMERA (Mantidos originais) ---
 mainStage.addEventListener('touchstart', (e) => {
     if (isEditingGallery) {
         if (e.touches.length === 1) {
@@ -191,8 +203,7 @@ async function initCamera() {
             video.play();
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('cameraUI').style.display = 'flex';
-            // Inicia com a moldura atual selecionada
-            molduraImg.src = `moldura${currentMoldura}.png`; 
+            setMoldura(1); // Começa na moldura 1
             molduraImg.style.display = 'block';
         };
     } catch (e) { alert("Câmera não disponível."); }
@@ -210,42 +221,27 @@ function drawFrame(ctx, w, h) {
     if (molduraImg.complete) ctx.drawImage(molduraImg, 0, 0, w, h);
 }
 
-// --- COMPARTILHAMENTO ---
+// --- FUNÇÕES DE CAPTURA E RESULTADO (Mantidos originais) ---
 async function handleShare(url, type) {
     try {
         const response = await fetch(url);
         const blob = await response.blob();
         const extension = type === 'image' ? 'jpg' : 'mp4';
-        const mimeType = type === 'image' ? 'image/jpeg' : 'video/mp4';
-        const file = new File([blob], `registro_${Date.now()}.${extension}`, { type: mimeType });
-
+        const file = new File([blob], `registro_${Date.now()}.${extension}`, { type: type === 'image' ? 'image/jpeg' : 'video/mp4' });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({ files: [file], title: 'Lucca 1 Ano' });
         } else {
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `registro.${extension}`;
-            a.click();
+            const a = document.createElement('a'); a.href = url; a.download = `registro.${extension}`; a.click();
         }
-    } catch (err) { console.error("Erro no compartilhamento:", err); }
+    } catch (err) { console.error(err); }
 }
 
 function showResult(url, type) {
     document.getElementById('resultUI').style.display = 'flex';
     document.getElementById('cameraUI').style.display = 'none';
-    currentType = type;
-    currentFileUrl = url;
-    
-    if (type === 'image') {
-        iosImageResult.src = url; 
-        iosImageResult.style.display = 'block';
-        videoPreview.style.display = 'none';
-    } else {
-        iosImageResult.style.display = 'none';
-        videoPreview.style.display = 'block'; 
-        videoPreview.src = url; 
-        videoPreview.play();
-    }
+    currentType = type; currentFileUrl = url;
+    if (type === 'image') { iosImageResult.src = url; iosImageResult.style.display = 'block'; videoPreview.style.display = 'none'; }
+    else { iosImageResult.style.display = 'none'; videoPreview.style.display = 'block'; videoPreview.src = url; videoPreview.play(); }
     document.getElementById('downloadBtn').onclick = () => handleShare(currentFileUrl, currentType);
 }
 
@@ -257,21 +253,13 @@ function takePhoto() {
 
 function startRecording(isBoom) {
     isRecording = true; recordedChunks = []; boomFrames = [];
-    if (isBoom) {
-        captureBoomerang(Date.now());
-    } else {
-        startTimer();
-        canvasFinal.width = 720; canvasFinal.height = 1280;
+    if (isBoom) { captureBoomerang(Date.now()); } else {
+        startTimer(); canvasFinal.width = 720; canvasFinal.height = 1280;
         const canvasStream = canvasFinal.captureStream(30);
         try { if (stream.getAudioTracks().length > 0) canvasStream.addTrack(stream.getAudioTracks()[0]); } catch(e){}
-        
-        const mimeType = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4' : 'video/webm';
-        mediaRecorder = new MediaRecorder(canvasStream, { mimeType });
+        mediaRecorder = new MediaRecorder(canvasStream, { mimeType: MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4' : 'video/webm' });
         mediaRecorder.ondataavailable = e => { if(e.data.size > 0) recordedChunks.push(e.data); };
-        mediaRecorder.onstop = () => {
-            const blob = new Blob(recordedChunks, { type: 'video/mp4' });
-            showResult(URL.createObjectURL(blob), 'video');
-        };
+        mediaRecorder.onstop = () => showResult(URL.createObjectURL(new Blob(recordedChunks, { type: 'video/mp4' })), 'video');
         mediaRecorder.start();
         const loop = () => { if(isRecording) { drawFrame(ctxFinal, 720, 1280); requestAnimationFrame(loop); } };
         loop();
@@ -282,13 +270,10 @@ function stopRecording() { isRecording = false; stopTimer(); if(mediaRecorder) m
 
 function captureBoomerang(startTime) {
     const interval = setInterval(() => {
-        if (Date.now() - startTime >= BOOM_CAPTURE_TIME) {
-            clearInterval(interval); processBoomerang();
-        } else {
-            const fCanvas = document.createElement('canvas');
-            fCanvas.width = 720; fCanvas.height = 1280;
-            const fCtx = fCanvas.getContext('2d');
-            fCtx.drawImage(video, 0, 0, 720, 1280);
+        if (Date.now() - startTime >= BOOM_CAPTURE_TIME) { clearInterval(interval); processBoomerang(); } 
+        else {
+            const fCanvas = document.createElement('canvas'); fCanvas.width = 720; fCanvas.height = 1280;
+            fCanvas.getContext('2d').drawImage(video, 0, 0, 720, 1280);
             boomFrames.push(fCanvas);
         }
     }, 40); 
@@ -302,10 +287,7 @@ function processBoomerang() {
     const streamBoom = canvasFinal.captureStream(30);
     const rec = new MediaRecorder(streamBoom, { mimeType: MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4' : 'video/webm' });
     rec.ondataavailable = e => { if(e.data.size > 0) recordedChunks.push(e.data); };
-    rec.onstop = () => {
-        document.getElementById('boomLoading').style.display = 'none';
-        showResult(URL.createObjectURL(new Blob(recordedChunks, { type: 'video/mp4' })), 'video');
-    };
+    rec.onstop = () => { document.getElementById('boomLoading').style.display = 'none'; showResult(URL.createObjectURL(new Blob(recordedChunks, { type: 'video/mp4' })), 'video'); };
     rec.start();
     let idx = 0;
     const playInterval = setInterval(() => {
@@ -318,21 +300,17 @@ function processBoomerang() {
     }, 33);
 }
 
-// --- GALERIA ---
 fileInput.onchange = e => {
     if (e.target.files[0]) {
         const reader = new FileReader();
         reader.onload = ev => {
             galleryImg = new Image();
             galleryImg.onload = () => {
-                isEditingGallery = true;
-                document.getElementById('cameraUI').style.display = 'none';
-                document.getElementById('editUI').style.display = 'flex';
-                editorCanvas.style.display = 'block';
+                isEditingGallery = true; document.getElementById('cameraUI').style.display = 'none';
+                document.getElementById('editUI').style.display = 'flex'; editorCanvas.style.display = 'block';
                 editorCanvas.width = window.innerWidth; editorCanvas.height = window.innerHeight;
                 const ratio = Math.min(editorCanvas.width/galleryImg.width, editorCanvas.height/galleryImg.height);
-                galleryTransform.sc = ratio;
-                galleryTransform.x = (editorCanvas.width - (galleryImg.width * ratio)) / 2;
+                galleryTransform.sc = ratio; galleryTransform.x = (editorCanvas.width - (galleryImg.width * ratio)) / 2;
                 galleryTransform.y = (editorCanvas.height - (galleryImg.height * ratio)) / 2;
                 renderEditor();
             };
@@ -345,11 +323,8 @@ fileInput.onchange = e => {
 function renderEditor() {
     if (!isEditingGallery) return;
     eCtx.fillStyle = "#000"; eCtx.fillRect(0, 0, editorCanvas.width, editorCanvas.height);
-    eCtx.save();
-    eCtx.translate(galleryTransform.x, galleryTransform.y);
-    eCtx.scale(galleryTransform.sc, galleryTransform.sc);
-    eCtx.drawImage(galleryImg, 0, 0);
-    eCtx.restore();
+    eCtx.save(); eCtx.translate(galleryTransform.x, galleryTransform.y); eCtx.scale(galleryTransform.sc, galleryTransform.sc);
+    eCtx.drawImage(galleryImg, 0, 0); eCtx.restore();
     animId = requestAnimationFrame(renderEditor);
 }
 
@@ -357,11 +332,8 @@ function confirmGalleryEdit() {
     isEditingGallery = false; cancelAnimationFrame(animId);
     canvasFinal.width = 1080; canvasFinal.height = 1920;
     const s = 1080 / editorCanvas.width;
-    ctxFinal.save();
-    ctxFinal.translate(galleryTransform.x * s, galleryTransform.y * s);
-    ctxFinal.scale(galleryTransform.sc * s, galleryTransform.sc * s);
-    ctxFinal.drawImage(galleryImg, 0, 0);
-    ctxFinal.restore();
+    ctxFinal.save(); ctxFinal.translate(galleryTransform.x * s, galleryTransform.y * s); ctxFinal.scale(galleryTransform.sc * s, galleryTransform.sc * s);
+    ctxFinal.drawImage(galleryImg, 0, 0); ctxFinal.restore();
     if (molduraImg.complete) ctxFinal.drawImage(molduraImg, 0, 0, 1080, 1920);
     showResult(canvasFinal.toDataURL('image/jpeg', 0.95), 'image');
 }
