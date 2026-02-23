@@ -60,7 +60,7 @@
     <canvas id="editorCanvas"></canvas>
     <canvas id="canvasPreview"></canvas> 
     <canvas id="canvasFinal"></canvas>
-    <video id="videoPreview" playsinline controls loop></video>
+    <video id="videoPreview" playsinline controls loop muted></video>
     <img id="iosImageResult" alt="Resultado Final" />
     <img id="molduraImagePreview" src="" />
     
@@ -187,7 +187,7 @@ async function initCamera() {
             video.play();
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('cameraUI').style.display = 'flex';
-            molduraImg.src = 'moldura1.png'; // Moldura Única
+            molduraImg.src = 'moldura1.png'; 
             molduraImg.style.display = 'block';
         };
     } catch (e) { alert("Câmera não disponível."); }
@@ -205,26 +205,38 @@ function drawFrame(ctx, w, h) {
     if (molduraImg.complete) ctx.drawImage(molduraImg, 0, 0, w, h);
 }
 
-// --- FUNÇÃO DE COMPARTILHAMENTO (WHATSAPP / SALVAR) ---
+// --- FUNÇÃO DE COMPARTILHAMENTO ATUALIZADA PARA IPHONE ---
 async function handleShare(url, type) {
     try {
         const response = await fetch(url);
         const blob = await response.blob();
-        const ext = type === 'image' ? 'jpg' : 'mp4';
-        const file = new File([blob], `registro_${Date.now()}.${ext}`, { type: blob.type });
+        const extension = type === 'image' ? 'jpg' : 'mp4';
+        const mimeType = type === 'image' ? 'image/jpeg' : 'video/mp4';
+        const fileName = `registro_${Date.now()}.${extension}`;
+        
+        const file = new File([blob], fileName, { type: mimeType });
 
-        if (navigator.share && navigator.canShare({ files: [file] })) {
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({
                 files: [file],
-                title: 'Meu Registro - Lucca 1 Ano'
+                title: 'Meu Registro',
+                text: 'Olha meu registro de 1 ano do Lucca!'
             });
         } else {
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `registro.${ext}`;
-            a.click();
+            // Fallback: No iOS o download via link <a> muitas vezes falha com blobs. 
+            // Abrimos em uma nova aba para o usuário salvar manualmente se o share falhar.
+            const newWindow = window.open(url, '_blank');
+            if(!newWindow) {
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                a.click();
+            }
         }
-    } catch (err) { console.error("Erro ao compartilhar:", err); }
+    } catch (err) {
+        console.error("Erro ao compartilhar:", err);
+        alert("Para salvar no iPhone, segure o dedo sobre a imagem/vídeo.");
+    }
 }
 
 function takePhoto() {
@@ -237,17 +249,24 @@ function takePhoto() {
 function showResult(url, type) {
     document.getElementById('resultUI').style.display = 'flex';
     document.getElementById('cameraUI').style.display = 'none';
+    currentType = type;
+    currentFileUrl = url;
     
     if (type === 'image') {
         iosImageResult.src = url; 
         iosImageResult.style.display = 'block';
-        if (isIOS) document.getElementById('iosTip').style.display = 'block';
+        videoPreview.style.display = 'none';
+        if (isIOS) document.getElementById('iosTip').innerText = "👆 Segure na foto para salvar ou use o botão Compartilhar";
+        document.getElementById('iosTip').style.display = 'block';
     } else {
+        iosImageResult.style.display = 'none';
         videoPreview.style.display = 'block'; 
         videoPreview.src = url; 
         videoPreview.play();
+        if (isIOS) document.getElementById('iosTip').innerText = "Clique em Compartilhar para enviar ao WhatsApp";
+        document.getElementById('iosTip').style.display = 'block';
     }
-    document.getElementById('downloadBtn').onclick = () => handleShare(url, type);
+    document.getElementById('downloadBtn').onclick = () => handleShare(currentFileUrl, currentType);
 }
 
 function resetAll() {
@@ -316,21 +335,38 @@ function confirmGalleryEdit() {
     showResult(canvasFinal.toDataURL('image/jpeg', 0.95), 'image');
 }
 
-// --- VÍDEO E BOOMERANG ---
+// --- VÍDEO E BOOMERANG ATUALIZADOS ---
+function getSupportedMimeType() {
+    const types = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+    for (let type of types) {
+        if (MediaRecorder.isTypeSupported(type)) return type;
+    }
+    return '';
+}
+
 function startRecording(isBoom) {
     isRecording = true; recordedChunks = []; boomFrames = [];
     currentType = 'video';
+    
     if (isBoom) {
         captureBoomerang(Date.now());
     } else {
         startTimer();
         canvasFinal.width = 720; canvasFinal.height = 1280;
         const canvasStream = canvasFinal.captureStream(30);
-        if (stream.getAudioTracks().length > 0) canvasStream.addTrack(stream.getAudioTracks()[0]);
-        mediaRecorder = new MediaRecorder(canvasStream, { mimeType: 'video/webm' });
+        
+        // No iOS, se houver erro no áudio, gravamos sem áudio para não travar
+        try {
+            if (stream.getAudioTracks().length > 0) canvasStream.addTrack(stream.getAudioTracks()[0]);
+        } catch(e) { console.log("Erro ao adicionar áudio"); }
+
+        const options = { mimeType: getSupportedMimeType() };
+        mediaRecorder = new MediaRecorder(canvasStream, options);
+        
         mediaRecorder.ondataavailable = e => { if(e.data.size > 0) recordedChunks.push(e.data); };
         mediaRecorder.onstop = () => {
-            currentFileUrl = URL.createObjectURL(new Blob(recordedChunks, { type: 'video/mp4' }));
+            const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+            currentFileUrl = URL.createObjectURL(blob);
             showResult(currentFileUrl, 'video');
         };
         mediaRecorder.start();
@@ -364,11 +400,13 @@ function processBoomerang() {
     const pingPong = [...boomFrames, ...[...boomFrames].reverse()];
     const finalSequence = [...pingPong, ...pingPong];
     const streamBoom = canvasFinal.captureStream(30);
-    const rec = new MediaRecorder(streamBoom, { mimeType: 'video/webm' });
+    const rec = new MediaRecorder(streamBoom, { mimeType: getSupportedMimeType() });
+    
     rec.ondataavailable = e => { if(e.data.size > 0) recordedChunks.push(e.data); };
     rec.onstop = () => {
         document.getElementById('boomLoading').style.display = 'none';
-        currentFileUrl = URL.createObjectURL(new Blob(recordedChunks, { type: 'video/mp4' }));
+        const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+        currentFileUrl = URL.createObjectURL(blob);
         showResult(currentFileUrl, 'video');
     };
     rec.start();
