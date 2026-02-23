@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-    <title>Lucca 1 Ano</title>
+    <title>Carregando...</title>
     <style>
         :root { --accent: #25D366; --record: #ff0000; --boom: #e1306c; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -35,7 +35,6 @@
         .btn-photo, .btn-boom, .btn-gallery, .btn-video { opacity: 0 !important; border: none !important; background: transparent !important; cursor: pointer; outline: none; }
         .btn-ui { padding: 10px 12px; background: rgba(0,0,0,0.6); border: 1px solid #fff; border-radius: 20px; color: #fff; cursor: pointer; backdrop-filter: blur(5px); font-size: 11px; font-weight: bold; }
         
-        /* Estilo para botão de moldura ativo */
         .btn-ui.active { background: var(--accent); border-color: var(--accent); }
 
         .btn-gallery { width: 55px; height: 55px; }
@@ -48,7 +47,8 @@
         .actions-box { display: flex; flex-direction: column; gap: 10px; width: 85%; pointer-events: auto; }
         .btn-res { padding: 18px; border-radius: 15px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; text-align: center; text-decoration: none; color: #fff; }
         
-        #startScreen { position: absolute; inset: 0; background: #000 url('capajpg.jpg') center/cover no-repeat; display: flex; align-items: center; justify-content: center; z-index: 100; }
+        /* Capa dinâmica */
+        #startScreen { position: absolute; inset: 0; background-color: #000; background-position: center; background-size: cover; background-repeat: no-repeat; display: flex; align-items: center; justify-content: center; z-index: 100; }
         #startBtn { padding: 20px 40px; font-size: 14px; font-weight: bold; border: none; background: #FF5722; color: #fff; border-radius: 50px; cursor: pointer; }
     </style>
 </head>
@@ -109,6 +109,22 @@
 </div>
 
 <script>
+// ==========================================
+//   PAINEL DE CONTROLE - EDIÇÃO LIVRE
+// ==========================================
+const CLIENTE = {
+    nomeEvento: "Matheus 1 Ano",        // Nome no compartilhamento
+    tituloPagina: "Matheus 1 Ano",      // Nome na aba
+    arquivoCapa: "capajpg.jpg",         // Imagem inicial
+    arquivoMoldura1: "moldura1.png",    // Moldura do botão FOTO 1
+    arquivoMoldura2: "moldura2.png"     // Moldura do botão FOTO 2
+};
+
+// Aplicar configurações
+document.title = CLIENTE.tituloPagina;
+document.getElementById('startScreen').style.backgroundImage = `url('${CLIENTE.arquivoCapa}')`;
+// ==========================================
+
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 let usingFrontCamera = true, stream = null, isRecording = false, mediaRecorder = null, recordedChunks = [];
 let currentFileUrl = null, boomFrames = [], currentType = 'image';
@@ -143,9 +159,11 @@ document.getElementById('galleryBtn').onclick = () => fileInput.click();
 document.getElementById('cancelEditBtn').onclick = resetAll;
 document.getElementById('confirmEditBtn').onclick = confirmGalleryEdit;
 
-// --- LÓGICA DAS MOLDURAS (FOTO 1 / FOTO 2) ---
+// --- LÓGICA DAS MOLDURAS DINÂMICAS ---
 function setMoldura(num) {
-    molduraImg.src = `moldura${num}.png`;
+    // Busca o arquivo definido no PAINEL DE CONTROLE
+    molduraImg.src = num === 1 ? CLIENTE.arquivoMoldura1 : CLIENTE.arquivoMoldura2;
+    
     if(num === 1) {
         btnM1.classList.add('active');
         btnM2.classList.remove('active');
@@ -158,7 +176,7 @@ function setMoldura(num) {
 btnM1.onclick = () => setMoldura(1);
 btnM2.onclick = () => setMoldura(2);
 
-// --- GESTOS E CÂMERA (Mantidos originais) ---
+// --- GESTOS ---
 mainStage.addEventListener('touchstart', (e) => {
     if (isEditingGallery) {
         if (e.touches.length === 1) {
@@ -203,7 +221,7 @@ async function initCamera() {
             video.play();
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('cameraUI').style.display = 'flex';
-            setMoldura(1); // Começa na moldura 1
+            setMoldura(1); 
             molduraImg.style.display = 'block';
         };
     } catch (e) { alert("Câmera não disponível."); }
@@ -221,7 +239,7 @@ function drawFrame(ctx, w, h) {
     if (molduraImg.complete) ctx.drawImage(molduraImg, 0, 0, w, h);
 }
 
-// --- FUNÇÕES DE CAPTURA E RESULTADO (Mantidos originais) ---
+// --- COMPARTILHAMENTO ---
 async function handleShare(url, type) {
     try {
         const response = await fetch(url);
@@ -229,7 +247,7 @@ async function handleShare(url, type) {
         const extension = type === 'image' ? 'jpg' : 'mp4';
         const file = new File([blob], `registro_${Date.now()}.${extension}`, { type: type === 'image' ? 'image/jpeg' : 'video/mp4' });
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ files: [file], title: 'Lucca 1 Ano' });
+            await navigator.share({ files: [file], title: CLIENTE.nomeEvento });
         } else {
             const a = document.createElement('a'); a.href = url; a.download = `registro.${extension}`; a.click();
         }
