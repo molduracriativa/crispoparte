@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+    <title>Convite Alice</title>
+
+    <meta property="og:title" content="Convite especial: Alice - 2 Ano">
+    <meta property="og:description" content="Toque para abrir os detalhes deste dia incrível.">
+    <meta property="og:image" content="https://crispoparte.com.br/alice2anos/minha-arte.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:type" content="website">
+
+    <style>
+        :root {
+            --cor-botao: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #000;
+            height: 100dvh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .page {
+            display: none;
+            width: 100%;
+            height: 100dvh;
+            position: relative;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .page img,
+        .page video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+        }
+
+        .content-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* ANIMAÇÃO PULSE */
+        @keyframes pulse-white {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+
+        /* BOTÃO PLAY/PAUSE */
+        .btn-audio {
+            position: fixed;
+            top: 30px;
+            left: 20px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: rgba(0, 0, 0, 0.4);
+            border: 2px solid var(--cor-botao);
+            color: var(--cor-botao);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 1000;
+            font-size: 18px;
+            animation: pulse-white 2s infinite;
+        }
+
+        .btn-audio:active {
+            transform: scale(0.9);
+            animation: none;
+        }
+
+        /* HOTSPOTS */
+        .hotspot {
+            position: absolute;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .btn-voltar {
+            position: absolute;
+            top: 5%;
+            right: 5%;
+            width: 12%;
+            aspect-ratio: 1/1;
+            z-index: 20;
+        }
+    </style>
+</head>
+
+<body>
+
+    <audio id="musica" src="audio.mp3" loop preload="auto"></audio>
+
+    <div id="btnControleAudio" class="btn-audio" onclick="toggleAudio()">
+        <span id="iconeAudio">II</span>
+    </div>
+
+    <div class="page" id="page1" style="display:block;">
+        <div class="content-wrapper" onclick="startInvite()">
+            <img src="pagina1.jpg" alt="">
+            <div class="hotspot" style="top:0; left:0; width:100%; height:100%;"></div>
+        </div>
+    </div>
+
+    <div class="page" id="page2">
+        <div class="content-wrapper">
+            <video id="video" src="pagina2.mp4" playsinline webkit-playsinline></video>
+        </div>
+    </div>
+
+    <div class="page" id="page3">
+        <div class="content-wrapper">
+            <img src="pagina3.jpg" alt="">
+
+            <a class="hotspot"
+               style="bottom:10%; left:16%; width:20%; height:10%;"
+               href="https://maps.app.goo.gl/3WJJH3e2wECwHCbk7"
+               target="_blank"></a>
+
+            <a class="hotspot"
+               style="bottom:10%; left:40%; width:20%; height:10%;"
+               href="https://wa.me/5571993233142"
+               target="_blank"></a>
+
+            <div class="hotspot"
+                 style="bottom:10%; left:64%; width:20%; height:10%;"
+                 onclick="goPage(4)"></div>
+        </div>
+    </div>
+
+    <div class="page" id="page4">
+        <div class="content-wrapper">
+            <img src="pagina4.jpg" alt="">
+            <div class="btn-voltar" onclick="goPage(3)"></div>
+        </div>
+    </div>
+
+    <script>
+        const musica = document.getElementById('musica');
+        const video = document.getElementById('video');
+        const btnAudio = document.getElementById('btnControleAudio');
+        const iconeAudio = document.getElementById('iconeAudio');
+
+        function startInvite() {
+            // Inicia a música de fundo
+            musica.play().catch(() => {});
+            btnAudio.style.display = 'flex';
+            
+            // Vai para página 2 (Vídeo)
+            goPage(2);
+            
+            // Garante que o vídeo não esteja mudo e inicie
+            video.muted = false;
+            video.play();
+
+            video.onended = function() {
+                // Ao acabar o vídeo, garante que a música volte ao volume normal
+                musica.volume = 1.0;
+                goPage(3);
+            };
+        }
+
+        // MONITOR DE TEMPO PARA BAIXAR VOLUME DA MÚSICA (DUCKING)
+        video.addEventListener('timeupdate', function() {
+            let tempo = video.currentTime;
+
+            // FALA 1: Baixa aos 8s e volta aos 13s (cobre a marca de 10s)
+            const fala1 = (tempo >= 9 && tempo <= 13);
+            
+            // FALA 2: Baixa aos 27s e volta aos 31s (cobre a marca de 28s)
+            const fala2 = (tempo >= 27 && tempo <= 31);
+
+            if (fala1 || fala2) {
+                // Diminui a música para 20% para ouvirmos a personagem
+                musica.volume = 0.2;
+            } else {
+                // Retorna ao volume normal (100%)
+                musica.volume = 1.0;
+            }
+        });
+
+        function toggleAudio() {
+            if (musica.paused) {
+                musica.play();
+                video.muted = false;
+                iconeAudio.innerText = "II";
+                btnAudio.style.animation = "pulse-white 2s infinite";
+            } else {
+                musica.pause();
+                video.muted = true;
+                iconeAudio.innerText = "▶";
+                btnAudio.style.animation = "none";
+            }
+        }
+
+        function goPage(num) {
+            document.querySelectorAll('.page').forEach(function(p) {
+                p.style.display = 'none';
+            });
+
+            const targetPage = document.getElementById('page' + num);
+            if (targetPage) {
+                targetPage.style.display = 'block';
+            }
+        }
+
+        document.addEventListener("visibilitychange", function() {
+            if (document.visibilityState === "visible" && !musica.paused) {
+                musica.play();
+            }
+        });
+    </script>
+
+</body>
+</html>
